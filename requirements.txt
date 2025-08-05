@@ -1,9 +1,4 @@
-# API Key Manager Dependencies
-# Python 3.6+ required
 
-# No external dependencies required - uses only Python standard library
-# Required modules: os, json, random, string, subprocess, datetime, pathlib, sys, argparse
-
-# Optional: For better terminal experience
-# colorama>=0.4.4  # For colored output on Windows
-# rich>=10.0.0     # For rich terminal formatting 
+flask>=2.0.0
+flask-cors>=3.0.0
+requests>=2.25.0 

@@ -6,6 +6,13 @@ import subprocess
 import datetime
 from pathlib import Path
 
+# Import pystyle for better colors
+try:
+    from pystyle import Colors, Colorate, Write, Box
+except ImportError:
+    print("❌ Thư viện pystyle chưa được cài đặt. Vui lòng cài đặt: pip install pystyle")
+    exit(1)
+
 class APIKeyManager:
     def __init__(self, api_dir="api"):
         self.api_dir = api_dir
@@ -14,6 +21,44 @@ class APIKeyManager:
             "rename", "spamdis", "spamzalo", "voice"
         ]
         self.github_repo = "https://github.com/giakietdev/keys.git"
+    
+    def print_header(self):
+        """In header đẹp với rainbow effect"""
+        header_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                    🔑 API KEY MANAGER 🔑                    ║
+║                    Developed by Hoang Gia Kiet              ║
+╚══════════════════════════════════════════════════════════════╝
+        """
+        print(Colorate.Horizontal(Colors.rainbow, header_text, 1))
+    
+    def print_success(self, message):
+        """In thông báo thành công"""
+        print(Colorate.Horizontal(Colors.green_to_white, f"✅ {message}", 1))
+    
+    def print_error(self, message):
+        """In thông báo lỗi"""
+        print(Colorate.Horizontal(Colors.red_to_white, f"❌ {message}", 1))
+    
+    def print_warning(self, message):
+        """In thông báo cảnh báo"""
+        print(Colorate.Horizontal(Colors.yellow_to_white, f"⚠️  {message}", 1))
+    
+    def print_info(self, message):
+        """In thông tin"""
+        print(Colorate.Horizontal(Colors.blue_to_white, f"ℹ️  {message}", 1))
+    
+    def print_loading(self, message):
+        """In thông báo đang tải"""
+        print(Colorate.Horizontal(Colors.cyan_to_blue, f"🔄 {message}", 1))
+    
+    def print_rainbow(self, message):
+        """In text với rainbow effect"""
+        print(Colorate.Horizontal(Colors.rainbow, message, 1))
+    
+    def print_purple(self, message):
+        """In text với purple effect"""
+        print(Colorate.Horizontal(Colors.purple_to_blue, message, 1))
     
     def generate_key(self, length=10):
         """Tạo key ngẫu nhiên"""
@@ -49,10 +94,10 @@ class APIKeyManager:
         if key not in keys:
             keys.append(key)
             self.write_keys(folder_name, keys)
-            print(f"✅ Đã thêm key '{key}' vào {folder_name}")
+            self.print_success(f"Đã thêm key '{key}' vào {folder_name}")
             return key
         else:
-            print(f"❌ Key '{key}' đã tồn tại trong {folder_name}")
+            self.print_error(f"Key '{key}' đã tồn tại trong {folder_name}")
             return None
     
     def remove_key(self, folder_name, key):
@@ -61,18 +106,21 @@ class APIKeyManager:
         if key in keys:
             keys.remove(key)
             self.write_keys(folder_name, keys)
-            print(f"✅ Đã xóa key '{key}' khỏi {folder_name}")
+            self.print_success(f"Đã xóa key '{key}' khỏi {folder_name}")
             return True
         else:
-            print(f"❌ Key '{key}' không tồn tại trong {folder_name}")
+            self.print_error(f"Key '{key}' không tồn tại trong {folder_name}")
             return False
     
     def list_keys(self, folder_name):
         """Liệt kê tất cả keys trong folder"""
         keys = self.read_keys(folder_name)
-        print(f"\n📁 Keys trong {folder_name}:")
-        for i, key in enumerate(keys, 1):
-            print(f"  {i}. {key}")
+        print(Colorate.Horizontal(Colors.purple_to_blue, f"\n📁 Keys trong {folder_name}:", 1))
+        if keys:
+            for i, key in enumerate(keys, 1):
+                print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {i:2d}. {key}", 1))
+        else:
+            print(Colorate.Horizontal(Colors.yellow_to_white, "  Không có keys nào", 1))
         return keys
     
     def update_version(self, folder_name, version=None):
@@ -96,7 +144,7 @@ class APIKeyManager:
         with open(version_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
         
-        print(f"✅ Đã cập nhật version cho {folder_name}")
+        self.print_success(f"Đã cập nhật version cho {folder_name}")
     
     def setup_git_repository(self):
         """Thiết lập Git repository nếu chưa có"""
@@ -104,37 +152,37 @@ class APIKeyManager:
             # Kiểm tra xem đã có Git repository chưa
             result = subprocess.run(['git', 'status'], capture_output=True, text=True)
             if result.returncode != 0:
-                print("🔄 Khởi tạo Git repository...")
+                self.print_loading("Khởi tạo Git repository...")
                 subprocess.run(['git', 'init'], check=True)
                 subprocess.run(['git', 'remote', 'add', 'origin', self.github_repo], check=True)
-                print("✅ Đã khởi tạo Git repository")
+                self.print_success("Đã khởi tạo Git repository")
                 return True
             else:
-                print("✅ Git repository đã tồn tại")
+                self.print_success("Git repository đã tồn tại")
                 return True
         except subprocess.CalledProcessError as e:
-            print(f"❌ Lỗi khi khởi tạo Git repository: {e}")
+            self.print_error(f"Lỗi khi khởi tạo Git repository: {e}")
             return False
         except FileNotFoundError:
-            print("❌ Git không được cài đặt")
+            self.print_error("Git không được cài đặt")
             return False
     
     def sync_with_remote(self):
         """Đồng bộ với remote repository"""
         try:
-            print("🔄 Đang đồng bộ với remote repository...")
+            self.print_loading("Đang đồng bộ với remote repository...")
             
             # Fetch latest changes
             subprocess.run(['git', 'fetch', 'origin'], check=True)
-            print("✅ Đã fetch latest changes")
+            self.print_success("Đã fetch latest changes")
             
             # Pull changes
             subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
-            print("✅ Đã pull changes từ remote")
+            self.print_success("Đã pull changes từ remote")
             
             return True
         except subprocess.CalledProcessError as e:
-            print(f"❌ Lỗi khi đồng bộ: {e}")
+            self.print_error(f"Lỗi khi đồng bộ: {e}")
             return False
     
     def git_operations(self):
@@ -143,7 +191,7 @@ class APIKeyManager:
             # Kiểm tra trạng thái Git
             result = subprocess.run(['git', 'status'], capture_output=True, text=True)
             if result.returncode != 0:
-                print("❌ Không phải là Git repository")
+                self.print_error("Không phải là Git repository")
                 if not self.setup_git_repository():
                     return False
             
@@ -152,38 +200,38 @@ class APIKeyManager:
             
             # Thêm tất cả thay đổi
             subprocess.run(['git', 'add', '.'], check=True)
-            print("✅ Đã add tất cả thay đổi")
+            self.print_success("Đã add tất cả thay đổi")
             
             # Commit với message
             commit_message = f"Update API keys - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-            print("✅ Đã commit thay đổi")
+            self.print_success("Đã commit thay đổi")
             
             # Push lên GitHub
             subprocess.run(['git', 'push', 'origin', 'master'], check=True)
-            print("✅ Đã push lên GitHub")
+            self.print_success("Đã push lên GitHub")
             
             return True
             
         except subprocess.CalledProcessError as e:
-            print(f"❌ Lỗi Git: {e}")
+            self.print_error(f"Lỗi Git: {e}")
             return False
         except FileNotFoundError:
-            print("❌ Git không được cài đặt hoặc không có trong PATH")
+            self.print_error("Git không được cài đặt hoặc không có trong PATH")
             return False
     
     def auto_generate_keys(self, count=1):
         """Tự động tạo keys cho tất cả folders"""
-        print(f"🔄 Đang tạo {count} key(s) cho tất cả folders...")
+        self.print_loading(f"Đang tạo {count} key(s) cho tất cả folders...")
         
         for folder in self.get_api_folders():
-            print(f"\n📁 Xử lý folder: {folder}")
+            print(Colorate.Horizontal(Colors.purple_to_blue, f"\n📁 Xử lý folder: {folder}", 1))
             for i in range(count):
                 new_key = self.add_key(folder)
                 if new_key:
                     self.update_version(folder)
         
-        print("\n✅ Hoàn thành tạo keys!")
+        self.print_success("Hoàn thành tạo keys!")
     
     def backup_keys(self):
         """Tạo backup của tất cả keys"""
@@ -196,13 +244,13 @@ class APIKeyManager:
         with open(backup_file, 'w', encoding='utf-8') as f:
             json.dump(backup_data, f, indent=4, ensure_ascii=False)
         
-        print(f"✅ Đã tạo backup: {backup_file}")
+        self.print_success(f"Đã tạo backup: {backup_file}")
         return backup_file
     
     def restore_keys(self, backup_file):
         """Khôi phục keys từ backup"""
         if not os.path.exists(backup_file):
-            print(f"❌ File backup '{backup_file}' không tồn tại")
+            self.print_error(f"File backup '{backup_file}' không tồn tại")
             return False
         
         try:
@@ -212,31 +260,38 @@ class APIKeyManager:
             for folder, keys in backup_data.items():
                 self.write_keys(folder, keys)
                 self.update_version(folder)
-                print(f"✅ Đã khôi phục {len(keys)} keys cho {folder}")
+                self.print_success(f"Đã khôi phục {len(keys)} keys cho {folder}")
             
             return True
         except Exception as e:
-            print(f"❌ Lỗi khi khôi phục: {e}")
+            self.print_error(f"Lỗi khi khôi phục: {e}")
             return False
+    
+    def print_menu(self):
+        """In menu chính với rainbow effect"""
+        menu_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                        📋 MAIN MENU 📋                       ║
+╠══════════════════════════════════════════════════════════════╣
+║ 1️⃣   Tạo key mới                                           ║
+║ 2️⃣   Xóa key                                               ║
+║ 3️⃣   Xem danh sách keys                                     ║
+║ 4️⃣   Tự động tạo keys cho tất cả folders                    ║
+║ 5️⃣   Đẩy lên GitHub                                         ║
+║ 6️⃣   Đồng bộ với remote repository                          ║
+║ 7️⃣   Tạo backup keys                                        ║
+║ 8️⃣   Khôi phục từ backup                                    ║
+║ 9️⃣   Thoát                                                  ║
+╚══════════════════════════════════════════════════════════════╝
+        """
+        print(Colorate.Horizontal(Colors.rainbow, menu_text, 1))
     
     def interactive_menu(self):
         """Menu tương tác"""
         while True:
-            print("\n" + "="*50)
-            print("🔑 API KEY MANAGER")
-            print("="*50)
-            print("1. Tạo key mới")
-            print("2. Xóa key")
-            print("3. Xem danh sách keys")
-            print("4. Tự động tạo keys cho tất cả folders")
-            print("5. Đẩy lên GitHub")
-            print("6. Đồng bộ với remote repository")
-            print("7. Tạo backup keys")
-            print("8. Khôi phục từ backup")
-            print("9. Thoát")
-            print("="*50)
+            self.print_menu()
             
-            choice = input("Chọn chức năng (1-9): ").strip()
+            choice = Write.Input("Chọn chức năng (1-9): ", Colors.cyan_to_blue)
             
             if choice == "1":
                 self.add_key_menu()
@@ -245,12 +300,12 @@ class APIKeyManager:
             elif choice == "3":
                 self.list_keys_menu()
             elif choice == "4":
-                count = input("Số lượng keys cần tạo cho mỗi folder: ").strip()
+                count = Write.Input("Số lượng keys cần tạo cho mỗi folder: ", Colors.cyan_to_blue)
                 try:
                     count = int(count)
                     self.auto_generate_keys(count)
                 except ValueError:
-                    print("❌ Vui lòng nhập số hợp lệ")
+                    self.print_error("Vui lòng nhập số hợp lệ")
             elif choice == "5":
                 self.git_operations()
             elif choice == "6":
@@ -258,75 +313,75 @@ class APIKeyManager:
             elif choice == "7":
                 self.backup_keys()
             elif choice == "8":
-                backup_file = input("Nhập tên file backup: ").strip()
+                backup_file = Write.Input("Nhập tên file backup: ", Colors.cyan_to_blue)
                 self.restore_keys(backup_file)
             elif choice == "9":
-                print("👋 Tạm biệt!")
+                print(Colorate.Horizontal(Colors.rainbow, "\n👋 Tạm biệt! Hẹn gặp lại!", 1))
                 break
             else:
-                print("❌ Lựa chọn không hợp lệ")
+                self.print_error("Lựa chọn không hợp lệ")
     
     def add_key_menu(self):
         """Menu thêm key"""
-        print("\n📁 Các folders có sẵn:")
+        print(Colorate.Horizontal(Colors.purple_to_blue, "\n📁 Các folders có sẵn:", 1))
         folders = self.get_api_folders()
         for i, folder in enumerate(folders, 1):
-            print(f"  {i}. {folder}")
+            print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {i}. {folder}", 1))
         
         try:
-            folder_idx = int(input("Chọn folder (số): ")) - 1
+            folder_idx = int(Write.Input("Chọn folder (số): ", Colors.cyan_to_blue)) - 1
             if 0 <= folder_idx < len(folders):
                 folder_name = folders[folder_idx]
-                custom_key = input("Nhập key (để trống để tạo tự động): ").strip()
+                custom_key = Write.Input("Nhập key (để trống để tạo tự động): ", Colors.cyan_to_blue)
                 key = custom_key if custom_key else None
                 self.add_key(folder_name, key)
                 self.update_version(folder_name)
             else:
-                print("❌ Lựa chọn không hợp lệ")
+                self.print_error("Lựa chọn không hợp lệ")
         except ValueError:
-            print("❌ Vui lòng nhập số hợp lệ")
+            self.print_error("Vui lòng nhập số hợp lệ")
     
     def remove_key_menu(self):
         """Menu xóa key"""
-        print("\n📁 Các folders có sẵn:")
+        print(Colorate.Horizontal(Colors.purple_to_blue, "\n📁 Các folders có sẵn:", 1))
         folders = self.get_api_folders()
         for i, folder in enumerate(folders, 1):
-            print(f"  {i}. {folder}")
+            print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {i}. {folder}", 1))
         
         try:
-            folder_idx = int(input("Chọn folder (số): ")) - 1
+            folder_idx = int(Write.Input("Chọn folder (số): ", Colors.cyan_to_blue)) - 1
             if 0 <= folder_idx < len(folders):
                 folder_name = folders[folder_idx]
                 keys = self.read_keys(folder_name)
                 if keys:
-                    print(f"\nKeys trong {folder_name}:")
+                    print(Colorate.Horizontal(Colors.purple_to_blue, f"\nKeys trong {folder_name}:", 1))
                     for i, key in enumerate(keys, 1):
-                        print(f"  {i}. {key}")
+                        print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {i:2d}. {key}", 1))
                     
-                    key_idx = int(input("Chọn key để xóa (số): ")) - 1
+                    key_idx = int(Write.Input("Chọn key để xóa (số): ", Colors.cyan_to_blue)) - 1
                     if 0 <= key_idx < len(keys):
                         key_to_remove = keys[key_idx]
                         if self.remove_key(folder_name, key_to_remove):
                             self.update_version(folder_name)
                     else:
-                        print("❌ Lựa chọn không hợp lệ")
+                        self.print_error("Lựa chọn không hợp lệ")
                 else:
-                    print(f"❌ Không có keys trong {folder_name}")
+                    self.print_error(f"Không có keys trong {folder_name}")
             else:
-                print("❌ Lựa chọn không hợp lệ")
+                self.print_error("Lựa chọn không hợp lệ")
         except ValueError:
-            print("❌ Vui lòng nhập số hợp lệ")
+            self.print_error("Vui lòng nhập số hợp lệ")
     
     def list_keys_menu(self):
         """Menu xem danh sách keys"""
-        print("\n📁 Các folders có sẵn:")
+        print(Colorate.Horizontal(Colors.purple_to_blue, "\n📁 Các folders có sẵn:", 1))
         folders = self.get_api_folders()
         for i, folder in enumerate(folders, 1):
-            print(f"  {i}. {folder}")
-        print(f"  {len(folders) + 1}. Tất cả")
+            print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {i}. {folder}", 1))
+        print(Colorate.Horizontal(Colors.cyan_to_blue, f"  {len(folders) + 1}. Tất cả", 1))
         
         try:
-            choice = int(input("Chọn folder (số): "))
+            choice = int(Write.Input("Chọn folder (số): ", Colors.cyan_to_blue))
             if 1 <= choice <= len(folders):
                 folder_name = folders[choice - 1]
                 self.list_keys(folder_name)
@@ -334,27 +389,31 @@ class APIKeyManager:
                 for folder in folders:
                     self.list_keys(folder)
             else:
-                print("❌ Lựa chọn không hợp lệ")
+                self.print_error("Lựa chọn không hợp lệ")
         except ValueError:
-            print("❌ Vui lòng nhập số hợp lệ")
+            self.print_error("Vui lòng nhập số hợp lệ")
 
 def main():
     """Hàm chính"""
     manager = APIKeyManager()
     
-    print("🚀 Khởi động API Key Manager...")
-    print(f"📁 Tìm thấy {len(manager.get_api_folders())} API folders")
-    print(f"🔗 Repository: {manager.github_repo}")
+    # Clear screen and show header
+    os.system('cls' if os.name == 'nt' else 'clear')
+    manager.print_header()
+    
+    print(Colorate.Horizontal(Colors.blue_to_white, "🚀 Khởi động API Key Manager...", 1))
+    print(Colorate.Horizontal(Colors.blue_to_white, f"📁 Tìm thấy {len(manager.get_api_folders())} API folders", 1))
+    print(Colorate.Horizontal(Colors.blue_to_white, f"🔗 Repository: {manager.github_repo}", 1))
     
     # Kiểm tra Git repository
     try:
         result = subprocess.run(['git', 'status'], capture_output=True, text=True)
         if result.returncode == 0:
-            print("✅ Đã kết nối với Git repository")
+            manager.print_success("Đã kết nối với Git repository")
         else:
-            print("⚠️  Không phải là Git repository hoặc chưa khởi tạo")
+            manager.print_warning("Không phải là Git repository hoặc chưa khởi tạo")
     except:
-        print("⚠️  Git không được cài đặt")
+        manager.print_warning("Git không được cài đặt")
     
     manager.interactive_menu()
 
