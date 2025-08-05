@@ -13,6 +13,7 @@ class APIKeyManager:
             "avatar", "joiner", "nhaydis", "nhayzalo", 
             "rename", "spamdis", "spamzalo", "voice"
         ]
+        self.github_repo = "https://github.com/giakietdev/keys.git"
     
     def generate_key(self, length=10):
         """Tạo key ngẫu nhiên"""
@@ -97,6 +98,45 @@ class APIKeyManager:
         
         print(f"✅ Đã cập nhật version cho {folder_name}")
     
+    def setup_git_repository(self):
+        """Thiết lập Git repository nếu chưa có"""
+        try:
+            # Kiểm tra xem đã có Git repository chưa
+            result = subprocess.run(['git', 'status'], capture_output=True, text=True)
+            if result.returncode != 0:
+                print("🔄 Khởi tạo Git repository...")
+                subprocess.run(['git', 'init'], check=True)
+                subprocess.run(['git', 'remote', 'add', 'origin', self.github_repo], check=True)
+                print("✅ Đã khởi tạo Git repository")
+                return True
+            else:
+                print("✅ Git repository đã tồn tại")
+                return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Lỗi khi khởi tạo Git repository: {e}")
+            return False
+        except FileNotFoundError:
+            print("❌ Git không được cài đặt")
+            return False
+    
+    def sync_with_remote(self):
+        """Đồng bộ với remote repository"""
+        try:
+            print("🔄 Đang đồng bộ với remote repository...")
+            
+            # Fetch latest changes
+            subprocess.run(['git', 'fetch', 'origin'], check=True)
+            print("✅ Đã fetch latest changes")
+            
+            # Pull changes
+            subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
+            print("✅ Đã pull changes từ remote")
+            
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Lỗi khi đồng bộ: {e}")
+            return False
+    
     def git_operations(self):
         """Thực hiện các thao tác Git"""
         try:
@@ -104,7 +144,11 @@ class APIKeyManager:
             result = subprocess.run(['git', 'status'], capture_output=True, text=True)
             if result.returncode != 0:
                 print("❌ Không phải là Git repository")
-                return False
+                if not self.setup_git_repository():
+                    return False
+            
+            # Đồng bộ với remote trước khi push
+            self.sync_with_remote()
             
             # Thêm tất cả thay đổi
             subprocess.run(['git', 'add', '.'], check=True)
@@ -116,7 +160,7 @@ class APIKeyManager:
             print("✅ Đã commit thay đổi")
             
             # Push lên GitHub
-            subprocess.run(['git', 'push'], check=True)
+            subprocess.run(['git', 'push', 'origin', 'master'], check=True)
             print("✅ Đã push lên GitHub")
             
             return True
@@ -141,6 +185,40 @@ class APIKeyManager:
         
         print("\n✅ Hoàn thành tạo keys!")
     
+    def backup_keys(self):
+        """Tạo backup của tất cả keys"""
+        backup_data = {}
+        for folder in self.get_api_folders():
+            keys = self.read_keys(folder)
+            backup_data[folder] = keys
+        
+        backup_file = f"backup_keys_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(backup_file, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, indent=4, ensure_ascii=False)
+        
+        print(f"✅ Đã tạo backup: {backup_file}")
+        return backup_file
+    
+    def restore_keys(self, backup_file):
+        """Khôi phục keys từ backup"""
+        if not os.path.exists(backup_file):
+            print(f"❌ File backup '{backup_file}' không tồn tại")
+            return False
+        
+        try:
+            with open(backup_file, 'r', encoding='utf-8') as f:
+                backup_data = json.load(f)
+            
+            for folder, keys in backup_data.items():
+                self.write_keys(folder, keys)
+                self.update_version(folder)
+                print(f"✅ Đã khôi phục {len(keys)} keys cho {folder}")
+            
+            return True
+        except Exception as e:
+            print(f"❌ Lỗi khi khôi phục: {e}")
+            return False
+    
     def interactive_menu(self):
         """Menu tương tác"""
         while True:
@@ -152,10 +230,13 @@ class APIKeyManager:
             print("3. Xem danh sách keys")
             print("4. Tự động tạo keys cho tất cả folders")
             print("5. Đẩy lên GitHub")
-            print("6. Thoát")
+            print("6. Đồng bộ với remote repository")
+            print("7. Tạo backup keys")
+            print("8. Khôi phục từ backup")
+            print("9. Thoát")
             print("="*50)
             
-            choice = input("Chọn chức năng (1-6): ").strip()
+            choice = input("Chọn chức năng (1-9): ").strip()
             
             if choice == "1":
                 self.add_key_menu()
@@ -173,6 +254,13 @@ class APIKeyManager:
             elif choice == "5":
                 self.git_operations()
             elif choice == "6":
+                self.sync_with_remote()
+            elif choice == "7":
+                self.backup_keys()
+            elif choice == "8":
+                backup_file = input("Nhập tên file backup: ").strip()
+                self.restore_keys(backup_file)
+            elif choice == "9":
                 print("👋 Tạm biệt!")
                 break
             else:
@@ -256,6 +344,7 @@ def main():
     
     print("🚀 Khởi động API Key Manager...")
     print(f"📁 Tìm thấy {len(manager.get_api_folders())} API folders")
+    print(f"🔗 Repository: {manager.github_repo}")
     
     # Kiểm tra Git repository
     try:
