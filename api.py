@@ -42,7 +42,7 @@ class APIKeyManager:
     
     def print_warning(self, message):
         """In thông báo cảnh báo"""
-        print(Colorate.Horizontal(Colors.yellow_to_white, f"⚠️  {message}", 1))
+        print(Colorate.Horizontal(Colors.yellow_to_green, f"⚠️  {message}", 1))
     
     def print_info(self, message):
         """In thông tin"""

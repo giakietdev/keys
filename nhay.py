@@ -56,16 +56,16 @@ def check_version(current_version):
         changelog_text = data.get('changelog', '')
         
         if latest_version != str(current_version):
-            Write.Print(f"[SYSTEM] Có phiên bản mới: {latest_version}\n", Colors.red_to_purple, interval=0.002)
+            Write.Print(f"[SYSTEM] Có phiên bản mới: {latest_version}\n", Colors.yellow_to_white, interval=0.002)
             if changelog_text:
                 Write.Print(f"[SYSTEM] Changelog:\n{changelog_text}\n", Colors.cyan_to_white, interval=0.002)
         else:
             Write.Print(f"[SYSTEM] Đang sử dụng phiên bản mới nhất: {current_version}\n", Colors.green_to_white, interval=0.002)
             
     except requests.exceptions.ConnectionError:
-        Write.Print("[SYSTEM] Không thể kiểm tra cập nhật do lỗi kết nối.\n", Colors.red_to_purple, interval=0.002)
+        Write.Print("[SYSTEM] Không thể kiểm tra cập nhật do lỗi kết nối.\n", Colors.yellow_to_white, interval=0.002)
     except Exception as e:
-        Write.Print(f"[SYSTEM] Lỗi khi kiểm tra cập nhật: {str(e)}\n", Colors.red_to_purple, interval=0.002)
+        Write.Print(f"[SYSTEM] Lỗi khi kiểm tra cập nhật: {str(e)}\n", Colors.b, interval=0.002)
 
 def get_ip_info():
     local_ip = "Unknown"
